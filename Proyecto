@@ -1,0 +1,129 @@
+import mysql.connector
+from tkinter import *
+from tkinter import messagebox
+
+# Conexión a la base de datos MySQL
+conexion = mysql.connector.connect(
+    user="root",
+    host="localhost",
+    database="e-learning",
+    port=3306
+)
+
+# Función para registrar al usuario
+def registrar():
+    nombre = nombreEntry.get()
+    contra = passEntry.get()
+
+    cursor = conexion.cursor()
+    try:
+        cursor.execute("INSERT INTO usuarios (nombre, contra) VALUES (%s, %s)", (nombre, contra))
+        conexion.commit()
+        messagebox.showinfo("Registro Exitoso", "¡Te has registrado con éxito!")
+    except mysql.connector.IntegrityError:
+        messagebox.showerror("Error de registro", f"El usuario '{nombre}' ya existe.")
+    except mysql.connector.Error as err:
+        messagebox.showerror("Error de Base de Datos", f"Error: {err}")
+    finally:
+        cursor.close()
+
+# Función para conectar al usuario
+def conectar():
+    nombre = nombreEntry.get()
+    contra = passEntry.get()
+
+    cursor = conexion.cursor()
+    try:
+        cursor.execute("SELECT * FROM usuarios WHERE nombre = %s AND contra = %s", (nombre, contra))
+        usuario_data = cursor.fetchone()
+        if usuario_data:
+            messagebox.showinfo("Login Exitoso", "¡Usuario encontrado y contraseña correcta!")
+            abrir_ventana_clases()  # Abrir nueva ventana para seleccionar clases
+        else:
+            messagebox.showerror("Error de Login", "Usuario o contraseña incorrectos.")
+    except mysql.connector.Error as err:
+        messagebox.showerror("Error de Base de Datos", f"Error: {err}")
+    finally:
+        cursor.close()
+
+# Función para abrir la ventana de selección de clases
+def abrir_ventana_clases():
+    # Crear nueva ventana
+    ventana_clases = Toplevel(root)
+    ventana_clases.title("Selecciona tus Clases de Secundaria")
+
+    # Obtener las materias de secundaria desde la base de datos
+    cursor = conexion.cursor()
+    try:
+        cursor.execute("SELECT * FROM cursos WHERE categoria = 'secundaria'")
+        cursos = cursor.fetchall()
+        if not cursos:
+            messagebox.showwarning("Sin Cursos", "No se encontraron cursos para la categoría 'secundaria'.")
+            return
+    except mysql.connector.Error as err:
+        messagebox.showerror("Error de Base de Datos", f"Error: {err}")
+        return
+    finally:
+        cursor.close()
+
+    # Crear etiquetas y checkboxes para seleccionar clases
+    Label(ventana_clases, text="Selecciona tus clases de Secundaria:", font=("Arial", 16)).pack(pady=10)
+
+    seleccionados = []  # Lista para almacenar las materias seleccionadas
+    checkboxes = []
+
+    for curso in cursos:
+        var = IntVar()  # Variable asociada a cada checkbox
+        checkbox = Checkbutton(ventana_clases, text=curso[1], variable=var)
+        checkbox.pack(anchor="w")
+        checkboxes.append((curso[0], var))  # Guardar ID del curso y el estado del checkbox
+
+    # Función para guardar las materias seleccionadas
+    def confirmar_seleccion():
+        seleccionados.clear()  # Limpiar la lista de seleccionados
+        for curso_id, var in checkboxes:
+            if var.get() == 1:  # Si el checkbox está marcado
+                seleccionados.append(curso_id)
+        if seleccionados:
+            messagebox.showinfo("Selección exitosa",
+                                f"Has seleccionado las siguientes materias: {', '.join(map(str, seleccionados))}")
+        else:
+            messagebox.showwarning("Selección vacía", "No has seleccionado ninguna materia.")
+
+    # Botón para confirmar la selección de clases
+    Button(ventana_clases, text="Confirmar selección", command=confirmar_seleccion).pack(pady=10)
+
+# Interfaz gráfica con Tkinter
+root = Tk()
+root.title("Login Usuario")
+
+# Frame principal para el login
+mainFrame = Frame(root)
+mainFrame.pack()
+mainFrame.config(width=480, height=320, bg="gray18")
+
+titulo = Label(mainFrame, text="Bienvenido A E-Learning 💻", font=("Arial", 30), fg="blue")
+titulo.grid(column=0, row=0, padx=70, pady=70, columnspan=2)
+
+nombreLabel = Label(mainFrame, text="Nombre:")
+nombreLabel.grid(column=0, row=1, padx=10, pady=10, sticky="e")
+
+nombreEntry = Entry(mainFrame)
+nombreEntry.grid(column=1, row=1, padx=10, pady=10)
+
+passLabel = Label(mainFrame, text="Contraseña:")
+passLabel.grid(column=0, row=2, padx=10, pady=10, sticky="e")
+
+passEntry = Entry(mainFrame, show="*")
+passEntry.grid(column=1, row=2, padx=10, pady=10)
+
+loginButton = Button(mainFrame, text="Login", width=10, command=conectar)
+loginButton.grid(column=1, row=3, pady=10)
+
+# Botón de registro
+registrarButton = Button(mainFrame, text="Registro", width=10, command=registrar)
+registrarButton.grid(column=0, row=3, pady=10)
+
+root.mainloop()
+
+conexion.close()
