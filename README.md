@@ -1,10 +1,11 @@
-Instala La Base De Dartos 
+Instala La Base De Datos 
 
 __Sql_E-learning__
 
 Abrir Repositorio 
 
-__git clone__
+
+__git clone https://github.com/Ruizmunoz19/Proyecto_E-Learning/tree/main__
 
 Navega en el  Proyecto
  
