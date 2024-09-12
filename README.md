@@ -1,3 +1,7 @@
+
+___COMO CORRER EL CODIGO___
+
+
 Instala La Base De Datos 
 
 __Sql_E-learning__
